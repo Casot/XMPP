@@ -2,7 +2,9 @@ unit FileGrabber;
 
 interface
 uses
-  XMPPEvent,SysUtils,classes,PacketGrabber,iq,Jid,XmppConnection,JidComparer,EventList,protocol.extensions.featureneg,JEP65Socket,protocol.extensions.bytestreams,protocol.extensions.si,protocol.extensions.filetransfer,IOUtils,XMPPConst,Error;
+  XMPPEvent,SysUtils,classes,PacketGrabber,iq,Jid,XmppConnection,JidComparer,EventList,
+  protocol.extensions.featureneg,JEP65Socket,protocol.extensions.bytestreams,protocol.extensions.si,
+  protocol.extensions.filetransfer,IOUtils,XMPPConst,Error, IdGlobal;
 type
   TFileGrabber=class(TPacketGrabber)
   const

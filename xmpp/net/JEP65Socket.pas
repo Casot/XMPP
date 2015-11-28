@@ -2,7 +2,8 @@ unit JEP65Socket;
 
 interface
 uses
-  Net.BaseSocket,Jid,Classes,Forms,blcksock,SyncObjs,SysUtils,SecHash,Generics.Collections,protocol.extensions.bytestreams,IQ,Element;
+  Net.BaseSocket,Jid,Classes,Forms,blcksock,SyncObjs,SysUtils,SecHash,Generics.Collections,
+  protocol.extensions.bytestreams,IQ,Element, IdGlobal;
 type
   TJEP65Socket=class;
   TTCPThread=class(TThread)
@@ -80,6 +81,17 @@ type
   end;
 
 implementation
+
+//minha func
+function IdBytesOf(const Val: RawByteString): TBytes;
+var
+  Len: Integer;
+begin
+  Len := Length(Val);
+  SetLength(Result, Len);
+  Move(Val[1], Result[0], Len);
+end;
+
 
 { TJEP65Socket }
 
@@ -421,8 +433,8 @@ procedure TTCPThread.RequestProxyConnection;
 var
   hash:string;
   len,i:integer;
-  buffer:tbytes;
-  temp:tbytes;
+  buffer:TBytes;
+  temp:TBytes;
 begin
   hash:=FOwner.BuildHash;
   len:=Length(hash);
@@ -432,7 +444,7 @@ begin
    buffer[2] := 0; // reserved.
    buffer[3] := 3; // DOMAINNAME
    buffer[4] := Byte(len);
-   temp:=BytesOf(hash);
+   temp:=IdBytesOf(hash);
    for i := 0 to len-1 do
      buffer[i+5]:=temp[i];
    buffer[5 + len] := 0;

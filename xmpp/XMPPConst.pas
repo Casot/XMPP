@@ -185,7 +185,9 @@ TXmppConnectionState=(
 		MTISO_9798_M_ECDSA_SHA1,
 		MTKERBEROS_V5,
 		MTNMAS_SAMBA_AUTH,
-        MTX_GOOGLE_TOKEN
+		MTX_GOOGLE_TOKEN,
+		X_FACEBOOK_PLATFORM,
+		X_RIOT_VAPOR
 	);
   TStreamErrorCondition=
     (

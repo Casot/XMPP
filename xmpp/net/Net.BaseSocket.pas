@@ -2,7 +2,7 @@ unit Net.BaseSocket;
 
 interface
 uses
-  XMPPEvent,SysUtils,Classes;
+  XMPPEvent,SysUtils,Classes, IdGlobal;
 type
   THostInfo = record
     Host: String;
@@ -39,7 +39,7 @@ type
   protected
     procedure FireOnConnect();
     procedure FireOnDisconnect();
-    procedure FireOnReceive(b:tbytes;len:Integer);overload;
+    procedure FireOnReceive(b:TBytes;len:Integer);overload;
     procedure FireOnReceive(xml:string);overload;
     procedure FireOnSend(b:TBytes;len:Integer);
     procedure FireOnError(ex:Exception);
@@ -137,7 +137,7 @@ begin
     FOnReceiveXml(Self,xml);
 end;
 
-procedure TBaseSocket.FireOnReceive(b: tbytes; len: Integer);
+procedure TBaseSocket.FireOnReceive(b: Tbytes; len: Integer);
 begin
   if Assigned(FOnReceive) then
     FOnReceive(Self,b,len);

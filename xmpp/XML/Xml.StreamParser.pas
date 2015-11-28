@@ -2,7 +2,9 @@ unit Xml.StreamParser;
 
 interface
 uses
-  NativeXml,XMPPEvent,EventList,Element,Xml.xpnet.BufferAggregate,Xml.xpnet.NS,SysUtils,XMPPConst,Xml.xpnet.Token,Xml.Dom.Text,Xml.xpnet.UTF8Encoding,Xml.xpnet.Exception,Xml.Dom.Comment,Generics.Collections,StrUtils,ElementFactory,TypInfo;
+  NativeXml,XMPPEvent,EventList,Element,Xml.xpnet.BufferAggregate,Xml.xpnet.NS,SysUtils,
+  XMPPConst,Xml.xpnet.Token,Xml.Dom.Text,Xml.xpnet.UTF8Encoding,Xml.xpnet.Exception,
+  Xml.Dom.Comment,Generics.Collections,StrUtils,ElementFactory,TypInfo, IdGlobal;
 type
   TStreamParser=class
   private
@@ -89,7 +91,7 @@ begin
   try
   if Assigned(FOnStreamElement) and (FOnStreamElement.Count>0) then
   begin
-    for i := 0 to FOnStreamElement.Count-1 do
+     for i := 0 to FOnStreamElement.Count-1 do
     FOnStreamElement[i](Self,current);
 
   end;
@@ -107,6 +109,7 @@ procedure TStreamParser.EndTag(buf: TBytes; offset: Integer; ct: TContentToken;
 var
   nm:string;
   parent:TElement;
+     i: integer;
 begin
   Dec(_depth);
   _ns.PopScope;
@@ -209,7 +212,7 @@ begin
   ct:=TContentToken.Create;
   try
     try
-      while off<Length(b) do
+      while off < Length(b) do
       begin
         if _cdata then
           tk:=_enc.tokenizeCdataSection(b,off,Length(b),ct)

@@ -2,13 +2,16 @@ unit XmppClientConnection;
 
 interface
 uses
-  XmppConnection,Agent,XMPPEvent,EventList,Generics.Collections,IqGrabber,PresenceGrabber,MessageGrabber
-  ,PresenceManager,Jid,IQ,Element,XMPPConst,stringprep,agents,Auth,protocol.iq.Register,protocol.iq.RegisterEventArgs
-  ,protocol.iq.roster.Roster,protocol.iq.agent.AgentIq,protocol.iq.auth.AuthIq,protocol.iq.roster.RosterIq
-  ,Presence,protocol.iq.disco.DiscoInfo,protocol.extensions.caps.Capabilities,Message,protocol.stream.Features
-  ,protocol.extensions.compression.Compress,protocol.tls.StartTls,protocol.tls.Proceed,protocol.Error,protocol.Stream
-  ,protocol.iq.roster.RosterItem,sasl.SaslEventArgs,protocol.iq.roster.RosterManager
-  ,classes,SysUtils,StrUtils,ClientSocket,SynapseSocket;
+  XmppConnection,Agent,XMPPEvent,EventList,Generics.Collections,IqGrabber,PresenceGrabber,
+  MessageGrabber,PresenceManager,Jid,IQ,Element,XMPPConst,stringprep,agents,Auth,
+  protocol.iq.Register,protocol.iq.RegisterEventArgs,protocol.iq.roster.Roster,
+  protocol.iq.agent.AgentIq,protocol.iq.auth.AuthIq,protocol.iq.roster.RosterIq,Presence,
+  protocol.iq.disco.DiscoInfo,protocol.extensions.caps.Capabilities,Message,
+  protocol.stream.Features,protocol.extensions.compression.Compress,
+  protocol.tls.StartTls,protocol.tls.Proceed,protocol.Error,protocol.Stream,
+  protocol.iq.roster.RosterItem,sasl.SaslEventArgs,protocol.iq.roster.RosterManager,
+  classes,SysUtils,StrUtils;
+
 const
   SRV_RECORD_PREFIX='_xmpp-client._tcp.';
 

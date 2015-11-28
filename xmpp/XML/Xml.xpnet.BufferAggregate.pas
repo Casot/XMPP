@@ -2,7 +2,7 @@ unit Xml.xpnet.BufferAggregate;
 
 interface
 uses
-  SysUtils,classes,Generics.Collections;
+  SysUtils,classes,Generics.Collections, IdGlobal;
 type
   TLinkBufNode=^TBufNode;
   TBufNode=record

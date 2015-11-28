@@ -165,13 +165,13 @@ begin
   else if(tagname='auth') and (namespace=xmlns_sasl)then
     te:=TAuth.Create()
   else if(tagname='response') and (namespace=xmlns_sasl)then
-    te:=TResponse.Create()
+    te:=TResponse.Create() }
   else if(tagname='challenge') and (namespace=xmlns_sasl)then
     te:=TChallenge.Create()
 
   else if(tagname='challenge') and (namespace=xmlns_client)then
     te:=TChallenge.Create()
-  else if(tagname='success') and (namespace=xmlns_client)then
+  {else if(tagname='success') and (namespace=xmlns_client)then
     te:=TSuccess.Create()
 
   else if(tagname='failure') and (namespace=xmlns_sasl)then

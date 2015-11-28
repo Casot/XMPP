@@ -71,6 +71,8 @@ begin
     MTKERBEROS_V5: Result:='KERBEROS_V5';
     MTNMAS_SAMBA_AUTH: Result:='NMAS-SAMBA-AUTH';
     MTX_GOOGLE_TOKEN: Result:='X-GOOGLE-TOKEN';
+    X_FACEBOOK_PLATFORM: Result:= 'X-FACEBOOK-PLATFORM';
+    X_RIOT_VAPOR: Result:= 'X-RIOT-VAPOR';
     else
     Result:='';
   end;

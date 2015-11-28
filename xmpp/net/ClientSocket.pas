@@ -3,12 +3,9 @@ unit ClientSocket;
 interface
 uses
   SysUtils,IdException,IdTCPClient,IdThread,Classes,XMPPEvent,XMPPConst,IdSSLOpenSSL,
-  //{$ifdef linux}
-    //QExtCtrls, IdSSLIntercept,
-    //{$else}
-    windows, ExtCtrls,IdSocks,Net.BaseSocket,
-    //{endif}
-    Generics.Collections,SyncObjs,IdTCPConnection,IdCompressorZLib,IdIOHandlerSocket;
+  windows, ExtCtrls,IdSocks,Net.BaseSocket,IdGlobal,
+  Generics.Collections,SyncObjs,IdTCPConnection,IdCompressorZLib,IdIOHandlerSocket,
+  IdIOHandler, IdIOHandlerStack, IdSSL, dialogs;
 type
   TParseThread = class;
   TConnectTimeoutException=class(EIdException)
@@ -25,7 +22,7 @@ type
     _compress:TIdCompressorZLib;
     _ssl:Boolean;
     _pendingsend:Boolean;
-    _sendqueue:TQueue<tbytes>;
+    _sendqueue:TQueue<TBytes>;
     _compressed:Boolean;
     _connecttimeout:integer;
     _connecttimeouttimer:ttimer;
@@ -51,6 +48,7 @@ type
     procedure InitCompression;
     function Compress(bin:TBytes):TBytes;
     function Decompress(bin:TBytes;len:Integer):TBytes;
+    function VerifyPeer(Certificate: TIdX509; AOk: Boolean; ADepth, AError: Integer): Boolean;
   public
 
     constructor Create();virtual;
@@ -80,6 +78,16 @@ type
 
 implementation
 
+function IdBytesOf(const Val: RawByteString): TBytes;
+var
+  Len: Integer;
+begin
+  Len := Length(Val);
+  SetLength(Result, Len);
+  Move(Val[1], Result[0], Len);
+end;
+
+
 { TConnectTimeoutException }
 
 constructor TConnectTimeoutException.Create(msg: string);
@@ -102,6 +110,7 @@ begin
 end;
 
 procedure TClientSocket.Connect;
+var m_Stream: smallint;
 begin
   try
   _compressed:=False;
@@ -109,19 +118,23 @@ begin
   _socket:=TIdTCPClient.Create(nil);
   _socket.UseNagle:=false;
   //_socket.Socket.WriteBufferFlush);
+ if _socket.Connected then
   _socket.Disconnect;
   _socket.Host:=Address;
   _socket.Port:=Port;
   _socket.ConnectTimeout:=_connecttimeout;
-  //_thread:=TParseThread.Create(self);
+  _thread:=TParseThread.Create(self);
+  if _ssl then
+    InitSSL;
   _socket.Connect;
+  _socket.Socket.DefStringEncoding:= IndyTextEncoding_UTF8;
   FireOnConnect();
-  Receive;
-  //_receivethread:=TIdThread.Create();
-  //_receivethread.FreeOnTerminate:=true;
-  //_receivethread.Synchronize(Receive);
-  //_receivethread.Resume;
-  //_thread.Start;
+  //Receive;
+  _receivethread:=TIdThread.Create();
+  _receivethread.FreeOnTerminate:=true;
+//  _receivethread.Synchronize(Receive);
+  _receivethread.Resume;
+  _thread.Start;
   except
     on E: Exception do FireOnError(e);
 
@@ -137,7 +150,7 @@ end;
 constructor TClientSocket.Create;
 begin
   _lock:=TCriticalSection.Create;
-  _sendqueue:=TQueue<tbytes>.Create;
+  _sendqueue:=TQueue<TBytes>.Create;
   _sstls:=True;
   _connecttimeout:=10000;
 
@@ -215,18 +228,36 @@ begin
 end;
 
 procedure TClientSocket.InitSSL;
+var IdSSIOHandle: TIdSSLIOHandlerSocketOpenSSL;
 begin
-
+IdSSIOHandle:= TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+InitSSL(IdSSIOHandle);
 end;
 
 procedure TClientSocket.InitSSL(protocol: TObject);
 begin
+with TIdSSLIOHandlerSocketOpenSSL(protocol) do
+ begin
+  UseNagle:= False;
+  SSLOptions.Mode := sslmClient;
+  SSLOptions.Method :=  sslvSSLv3;
+  SSLOptions.Mode := sslmUnassigned;
+  SSLOptions.VerifyMode := [sslvrfPeer];
+  SSLOptions.Method := sslvSSLv23;
+  SSLOptions.VerifyDepth := 2;
+  DefStringEncoding:= IndyTextEncoding_UTF8;
+  ReadTimeout:= 15000;
+  ReuseSocket:= rsTrue;
+  OnVerifyPeer:= VerifyPeer;
+  PassThrough:= False;
+_socket.IOHandler:= TIdSSLIOHandlerSocketOpenSSL(protocol);
 
+ end;
 end;
 
 procedure TClientSocket.Receive;
 var
-  b:tbytes;
+  b:TBytes;
   n:integer;
   s:string;
 begin
@@ -239,13 +270,13 @@ begin
     begin
       _socket.CheckForGracefulDisconnect(false);
       if not Connected then begin
-        //_cs._socket.CheckForGracefulDisconnect(false);
         _socket:=nil;
       end
       else
       begin
         b:=nil;
-        s:=_socket.IOHandler.InputBufferAsString(TEncoding.UTF8);
+        s:=_socket.IOHandler.InputBufferAsString(IndyTextEncoding_UTF8);
+//        if Length(s) > 0 then
         n:=Length(s);
         if(n>0)then
         begin
@@ -259,6 +290,14 @@ end;
 
 
 procedure TClientSocket.Send(bt: TBytes);
+function IdBytesOf(const Val: TBytes): TIdBytes;
+var
+  Len: Integer;
+begin
+  Len := Length(Val);
+  SetLength(Result, Len);
+  Move(Val[1], Result[0], Len);
+end;
 var
   i:integer;
   temp:string;
@@ -275,7 +314,7 @@ begin
     begin
       _pendingsend:=true;
       try
-        _socket.Socket.Write(bt);
+        _socket.Socket.Write(IdBytesOf(bt));
         if _sendqueue.Count>0 then
           Send(_sendqueue.Dequeue)
         else
@@ -302,10 +341,10 @@ var
   fp,err:string;
 begin
   inherited;
-  //fp:=_socket.IOHandler.AllData();
+  fp:=_socket.IOHandler.AllData();
   _ssl_int:=TIdSSLIOHandlerSocketOpenSSL.Create(nil);
   _ssl_int.UseNagle:=False;
-  //_ssl_int.SSLOptions:=false;
+//  _ssl_int.SSLOptions:=false;
    with _ssl_int do begin
         SSLOptions.Mode := sslmClient;
         SSLOptions.Method :=  sslvSSLv3;
@@ -316,7 +355,7 @@ begin
 
         if not DirectoryExists('d:\cer') then
           CreateDirectory('d:\cer',nil);
-        //if (_ssl_cert <> '') then begin
+       // if (_ssl_cert <> '') then begin
             SSLOptions.CertFile := 'd:\cer\disha.com.cn.cer';
             //SSLOptions.KeyFile := 'd:\cer\disha.com.cn.key';
         //end;
@@ -340,6 +379,29 @@ begin
     //fp:=_ssl_int.SSLSocket.PeerCert.FingerprintAsString;
 end;
 
+function TClientSocket.VerifyPeer(Certificate: TIdX509; AOk: Boolean; ADepth,
+  AError: Integer): Boolean;
+var
+    sTemp: string;
+    sActualPeerName, sRequiredPeerName: string;
+//    bVerifiedPeer: boolean;
+begin
+//minha funçao
+//Note this is called MULTIPLE times, one for each cert in the chain, starting
+//with the CA cert & ending with the user cert.
+sRequiredPeerName:= Certificate.Issuer.OneLine;
+Result := True;
+sActualPeerName := Certificate.Issuer.OneLine;
+sActualPeerName := Certificate.Subject.OneLine;
+if Pos(UpperCase(sRequiredPeerName), UpperCase(sActualPeerName)) > 0 then
+  begin
+    Result := True;
+  end else
+    begin
+//      Result := False;
+    end;
+end;
+
 procedure TClientSocket.Send(xml: string);
 var
   i:integer;
@@ -349,7 +411,7 @@ begin
   if _socket=nil then
   exit;
   _lock.Acquire;
-  bt:=BytesOf(UTF8Encode(xml));
+  bt:=IdBytesOf(UTF8Encode(xml));
   try
     FireOnSend(bt,Length(bt));
     if _compressed then
@@ -363,7 +425,7 @@ begin
       _pendingsend:=true;
       try
         //_socket.IOHandler.WriteBufferOpen;
-        _socket.IOHandler.Write(xml,TEncoding.UTF8);  //,TEncoding.UTF8
+        _socket.IOHandler.Write(xml,IndyTextEncoding_UTF8);  //,TEncoding.UTF8
         //_socket.IOHandler.WriteBufferFlush;
         //_socket.IOHandler.WriteBufferClose;
         if _sendqueue.Count>0 then
@@ -395,7 +457,7 @@ end;
 
 procedure TParseThread.Receive;
 var
-  b:tbytes;
+  b:TBytes;
   n:integer;
   s:string;
 begin
@@ -416,7 +478,7 @@ begin
   b:=nil;
     //_cs._socket.IOHandler.InputBuffer.ExtractToBytes(b);
     //_cs._socket.IOHandler.CheckForDataOnSource(10);
-    s:=_cs._socket.IOHandler.InputBufferAsString(TEncoding.UTF8);
+    s:=_cs._socket.IOHandler.InputBufferAsString(IndyTextEncoding_UTF8);
     //n:=_cs._socket.IOHandler.InputBuffer.Size;
     n:=Length(s);
     if(n>0)then

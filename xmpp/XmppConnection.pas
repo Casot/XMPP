@@ -2,14 +2,10 @@ unit XmppConnection;
 
 interface
 uses
-SysUtils ,
-//{$ifdef linux}
-    //QExtCtrls, IdSSLIntercept,
-    //{$else}
-    windows, ExtCtrls,StrUtils,NativeXml,
-    //{endif}
-    IdTCPConnection, IdTCPClient, IdException, IdThread, IdSocks,ClientSocket,stringprep,Element,XMPPEvent,XMPPConst,protocol.Stream
-    ,ElementFactory,Xml.StreamParser,SyncObjs,Xml.XmppStreamParser,SynapseSocket;
+System.SysUtils, Windows, VCL.ExtCtrls, StrUtils, NativeXml, IdGlobal, IdTCPConnection,
+IdTCPClient, IdException, IdThread, IdSocks, stringprep, Element,XMPPEvent, XMPPConst,
+protocol.Stream, ElementFactory, Xml.StreamParser, SyncObjs, ClientSocket;
+
 type
   TXmppConnection=class
   private
@@ -17,7 +13,7 @@ type
     _port:integer;
     _server,_connectserver,_streamid,_streamversion:string;
     _connectionstate:TXmppConnectionState;
-    _clientsocket:TSynapseSocket;
+    _clientsocket:TClientSocket;
     _SocketConnectionType:TSocketConnectionType;
     _autoresolveconnectserver:Boolean;
     _keepaliveinterval:integer;
@@ -52,7 +48,7 @@ type
     property StreamId:string read _streamid write _streamid;
     property StreamVersion:string read _streamversion write _streamversion;
     property XmppConnectionState:TXmppConnectionState read _connectionstate;
-    property ClientSocket:TSynapseSocket read _clientsocket;
+    property ClientSocket:TClientSocket read _clientsocket;
     property SocketConnectionType:TSocketConnectionType read _SocketConnectionType write FSetSocketConnectionType;
     property AutoResolveConnectServer:Boolean read _autoresolveconnectserver write _autoresolveconnectserver;
     property KeepAliveInterval:Integer read _keepaliveinterval write _keepaliveinterval;
@@ -87,6 +83,15 @@ type
   end;
   
 implementation
+
+function IdBytesOf(const Val: RawByteString): TBytes;
+var
+  Len: Integer;
+begin
+  Len := Length(Val);
+  SetLength(Result, Len);
+  Move(Val[1], Result[0], Len);
+end;
 
 { TXmppConnection }
 
@@ -194,7 +199,7 @@ end;
 procedure TXmppConnection.InitSocket;
 begin
   if _SocketConnectionType=Direct then
-    _clientsocket:=TSynapseSocket.Create;
+  _clientsocket:=TClientSocket.Create;
   _clientsocket.OnConnect:=SocketOnConnect;
   _clientsocket.OnDisconnect:=socketondisconnect;
   //_clientsocket.OnReceive:=socketonreceive;
@@ -227,13 +232,13 @@ end;
 
 procedure TXmppConnection.Send(xml: string);
 var
-  bt:tbytes;
+  bt:TBytes;
 begin
   FireOnWriteXml(Self,xml);
   _clientsocket.Send(xml);
   if Assigned(FOnWriteSocketData) then
   begin
-    bt:=BytesOf(UTF8Encode(xml));
+    bt:=IdBytesOf(UTF8Encode(xml));
     FOnWriteSocketData(self,bt,Length(bt));
   end;
   if _keepalive and (not Assigned(_keepalivetimer)) then
@@ -281,7 +286,7 @@ var
 begin
   if Assigned(FOnReadSocketData) then
   begin
-    bt:=BytesOf(xml);
+    bt:=IdBytesOf(xml);
     FOnReadSocketData(Self,bt,Length(bt));
   end;
   _lock.Acquire;

@@ -28,10 +28,12 @@ end;
 
 initialization
   _table:=TDictionary<string,TClassMechanism>.Create();
-  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTPLAIN),TMechanism);
+  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTPLAIN),TPlainMechanism);
   TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTDIGEST_MD5),TDigestMD5Mechanism);
-  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTANONYMOUS),TMechanism);
-  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTX_GOOGLE_TOKEN),TMechanism);
+  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTANONYMOUS),TAnonymousMechanism);
+  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(MTX_GOOGLE_TOKEN),TPlainMechanism);
+  TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(X_FACEBOOK_PLATFORM),TFaceBookMechanism);
+    TSaslFactory.AddMechanism(protocol.sasl.Mechanism.TMechanism.GetMechanismName(X_RIOT_VAPOR),TLeagueOfLegendsMechanism);
 finalization
   _table.Clear;
   _table.Free;

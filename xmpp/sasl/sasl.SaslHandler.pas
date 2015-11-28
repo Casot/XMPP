@@ -109,6 +109,10 @@ begin
             args.Mechanism:=TMechanism.GetMechanismName(MTDIGEST_MD5)
           else if f.Mechanisms.SupportsMechanism(MTPLAIN) then
             args.Mechanism:=TMechanism.GetMechanismName(MTPLAIN)
+          else if f.Mechanisms.SupportsMechanism(X_FACEBOOK_PLATFORM) then
+            args.Mechanism:=TMechanism.GetMechanismName(X_FACEBOOK_PLATFORM)
+          else if f.Mechanisms.SupportsMechanism(X_RIOT_VAPOR) then
+            args.Mechanism:=TMechanism.GetMechanismName(X_RIOT_VAPOR)
           else
             args.Mechanism:='';
         end

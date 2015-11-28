@@ -165,7 +165,6 @@ begin
   end
   else
     ns:=_ns.DefaultNamespace;
-
   newel:=TElementFactory.GetElement(prefix,AName,ns);
   for attname in ht.Keys do
     newel.SetAttribute(attname,ht[attname]);

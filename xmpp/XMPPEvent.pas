@@ -2,7 +2,7 @@ unit XMPPEvent;
 
 interface
 uses
-  IQ,Presence,protocol.iq.roster.RosterItem,agent,Element,Message,XMPPConst,SysUtils,protocol.iq.RegisterEventArgs,sasl.SaslEventArgs;
+  IQ,Presence,protocol.iq.roster.RosterItem,agent,Element,Message,XMPPConst,SysUtils,protocol.iq.RegisterEventArgs,sasl.SaslEventArgs, IdGlobal;
 type
   IqHandler=procedure(sender:TObject;iq:TIQ) of object;
   PresenceHandler=procedure(sender:TObject;pres:TPresence) of object;

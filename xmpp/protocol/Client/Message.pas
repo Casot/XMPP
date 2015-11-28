@@ -306,17 +306,17 @@ end;
 function TMessage.FGetChatstate: TChatstate;
 begin
   if HasTag('active') then
-    Result:=active
+    Result:=TChatstate(active)
   else if HasTag('inactive') then
-    result:=inactive
+    result:=TChatstate(inactive)
   else if HasTag('composing') then
-    result:=composing
+    result:=TChatstate(composing)
   else if HasTag('paused') then
-    result:=paused
+    result:=TChatstate(paused)
   else if HasTag('gone') then
-    result:=gone
+    result:=TChatstate(gone)
   else
-    result:=None;
+    result:=TChatstate(None);
 end;
 
 function TMessage.FGetDelay: TDelay;

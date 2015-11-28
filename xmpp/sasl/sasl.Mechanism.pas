@@ -2,7 +2,8 @@ unit sasl.Mechanism;
 
 interface
 uses
-  Element,XmppConnection,XMPPConst,SysUtils,StrUtils,util.Random,IdHash,IdHashMessageDigest,IdCoderMime,Types,StringUtils,Base64;
+  Element,XmppConnection,XMPPConst,SysUtils,StrUtils,util.Random,IdHash,IdHashMessageDigest,
+  IdCoderMime,Types,StringUtils,Base64,IdGlobal;
 type
   TMechanism=class
   private
@@ -23,23 +24,27 @@ type
     procedure Init(con:TXmppConnection);override;
     procedure Parse(e:TElement);override;
   end;
+
   TPlainMechanism=class(TMechanism)
-    function GetMessage():string;
+    function GetMessage():UTF8String;
   public
     constructor Create;override;
     procedure Init(con:TXmppConnection);override;
     procedure Parse(e:TElement);override;
   end;
+
   TDigestMD5Mechanism=class(TMechanism)
   public
     constructor Create;override;
     procedure Init(con:TXmppConnection);override;
     procedure Parse(e:TElement);override;
   end;
+
   TChallengeParseException=class(Exception)
   public
     constructor Create(msg:string);overload;
   end;
+
   TStep1=class(TDigestMD5Mechanism)
   private
     _realm,_nonce,_qop,_charset,_algorithm,_rspauth,_message:string;
@@ -55,6 +60,7 @@ type
     property Algorithm:string read _algorithm write _algorithm;
     property Rspauth:string read _rspauth write _rspauth;
   end;
+
   TStep2=class(TStep1)
   private
     _cnonce,_nc,_digesturi,_response,_authzid:string;
@@ -77,11 +83,39 @@ type
     property Response:string  read _response write _response;
     property Authzid:string read _authzid write _authzid;
     function ToString():string;override;
-
   end;
+
+  TFaceBookMechanism=class(TMechanism)
+    function GetMessage():UTF8String;
+  public
+    constructor Create;override;
+    procedure Init(con:TXmppConnection);override;
+    procedure Parse(e:TElement);override;
+  end;
+
+
+  TLeagueOfLegendsMechanism=class(TMechanism)
+    function GetMessage():UTF8String;
+  public
+    constructor Create;override;
+    procedure Init(con:TXmppConnection);override;
+    procedure Parse(e:TElement);override;
+  end;
+
+
 implementation
 uses
   XmppClientConnection,protocol.sasl;
+
+
+function IdBytesOf(const Val: RawByteString): TIdBytes;
+var
+  Len: Integer;
+begin
+  Len := Length(Val);
+  SetLength(Result, Len);
+  Move(Val[1], Result[0], Len);
+end;
 
 { TMechanism }
 
@@ -266,7 +300,7 @@ begin
   rng:=TRandom.Create;
   rng.CreateRand(64,s);
   //s:=encoder.Encode(s);
-  _cnonce:=LowerCase(ToHex(BytesOf(s),0,32));
+  _cnonce:=LowerCase(ToHex(IdBytesOf(s),0,32));
   rng.Free;
   //_cnonce:='e163ceed6cfbf8c1559a9ff373b292c2f926b65719a67a67c69f7f034c50aba3';
 end;
@@ -319,7 +353,7 @@ end;
 
 procedure TStep2.GenerateResponse;
 var
-  h1,h2,h3,ba1,bha1:TBytes;
+  h1,h2,h3,ba1,bha1:TidBytes;
   a1,a2,a3,p1,p2:string;
   sb:TStringBuilder;
   i,n:integer;
@@ -330,7 +364,7 @@ begin
 	sb.Append(Realm);
 	sb.Append(':');
 	sb.Append(Password);
-  h1:=hasher.HashString(sb.ToString,TEncoding.UTF8);
+  h1:=hasher.HashString(sb.ToString, IndyTextEncoding_UTF8);
   sb.Remove(0,sb.Length);
   sb.Append(':');
 	sb.Append(Nonce);
@@ -342,7 +376,7 @@ begin
     sb.Append(_authzid);
   end;
   a1:=sb.ToString;
-  ba1:=BytesOf(a1);
+  ba1:=IdBytesOf(a1);
 
   bha1:=Copy(h1,0,length(h1));
   SetLength(bha1,Length(h1)+length(ba1));
@@ -398,18 +432,19 @@ end;
 
 constructor TPlainMechanism.Create;
 begin
-  //inherited;
+ // inherited;
+
 
 end;
 
-function TPlainMechanism.GetMessage:string;
+function TPlainMechanism.GetMessage:UTF8String;
 var
   sb:TStringBuilder;
 begin
   sb:=TStringBuilder.Create;
-  sb.Append('0');
+  sb.Append(#0);
   sb.Append(UserName);
-  sb.Append('0');
+  sb.Append(#0);
   sb.Append(Password);
   result:=Base64Encode(sb.ToString);
 end;
@@ -417,7 +452,7 @@ end;
 procedure TPlainMechanism.Init(con: TXmppConnection);
 begin
   self.XmppClientConnection:=TXmppClientConnection(con);
-  self.XmppClientConnection.Send(protocol.sasl.TAuth.Create(MTPLAIN));
+  self.XmppClientConnection.Send(protocol.sasl.TAuth.Create(MTPLAIN, GetMessage));
 end;
 
 procedure TPlainMechanism.Parse(e: TElement);
@@ -444,4 +479,68 @@ begin
   //
 end;
 
+{ TFaceBookMechanism }
+
+constructor TFaceBookMechanism.Create;
+begin
+//  inherited;
+
+end;
+
+function TFaceBookMechanism.GetMessage: UTF8String;
+var
+  sb:TStringBuilder;
+begin
+  sb:=TStringBuilder.Create;
+  sb.Append(#0);
+  sb.Append(UserName);
+  sb.Append(#0);
+  sb.Append(Password);
+  result:=Base64Encode(sb.ToString);
+end;
+
+procedure TFaceBookMechanism.Init(con: TXmppConnection);
+begin
+  self.XmppClientConnection:=TXmppClientConnection(con);
+  self.XmppClientConnection.Send(protocol.sasl.TAuth.Create(X_FACEBOOK_PLATFORM, GetMessage));
+end;
+
+procedure TFaceBookMechanism.Parse(e: TElement);
+begin
+//
+end;
+
+{ TLeagueOfLegendsMechanism }
+
+constructor TLeagueOfLegendsMechanism.Create;
+begin
+//  inherited;
+
+end;
+
+function TLeagueOfLegendsMechanism.GetMessage: UTF8String;
+var
+  sb:TStringBuilder;
+begin
+  sb:=TStringBuilder.Create;
+  sb.Append(#0);
+  sb.Append(UserName);
+  sb.Append(#0);
+  sb.Append(Password);
+  result:=Base64Encode(sb.ToString);
+end;
+
+procedure TLeagueOfLegendsMechanism.Init(con: TXmppConnection);
+begin
+  self.XmppClientConnection:=TXmppClientConnection(con);
+  self.XmppClientConnection.Send(protocol.sasl.TAuth.Create(X_RIOT_VAPOR, GetMessage));
+end;
+
+procedure TLeagueOfLegendsMechanism.Parse(e: TElement);
+begin
+//
+end;
+
 end.
+
+

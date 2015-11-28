@@ -3,14 +3,14 @@ unit Base64;
 interface
 
 
-  function Base64Encode(const Source: string): string;
-  function Base64Decode(const Source: string): string;
+  function Base64Encode(const Source: UTF8String): UTF8String;
+  function Base64Decode(const Source: UTF8String): UTF8String;
 
 implementation
 const
   Base64_Table : shortstring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-function Base64Encode(const Source: string): string;
+function Base64Encode(const Source:  UTF8String): UTF8String;
 var
   NewLength: Integer;
 begin
@@ -97,7 +97,7 @@ begin
 end;
 
 //Decode Base64
-function Base64Decode(const Source: string): string;
+function Base64Decode(const Source: UTF8String): UTF8String;
 var
   NewLength: Integer;
 begin
